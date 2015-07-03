@@ -21,6 +21,9 @@
 # Makefile for bowtie, bowtie2-build, bowtie2-inspect
 #
 
+prefix = /usr/local
+bindir = $(prefix)/bin
+
 INC =
 GCC_PREFIX = $(shell dirname `which gcc`)
 GCC_SUFFIX =
@@ -33,22 +36,13 @@ BOWTIE_SHARED_MEM = 0
 
 # Detect Cygwin or MinGW
 WINDOWS = 0
-CYGWIN = 0
 MINGW = 0
-ifneq (,$(findstring CYGWIN,$(shell uname)))
-	WINDOWS = 1 
-	CYGWIN = 1
+ifneq (,$(findstring MINGW,$(shell uname)))
+	WINDOWS = 1
+	MINGW = 1
 	# POSIX memory-mapped files not currently supported on Windows
 	BOWTIE_MM = 0
 	BOWTIE_SHARED_MEM = 0
-else
-	ifneq (,$(findstring MINGW,$(shell uname)))
-		WINDOWS = 1
-		MINGW = 1
-		# POSIX memory-mapped files not currently supported on Windows
-		BOWTIE_MM = 0
-		BOWTIE_SHARED_MEM = 0
-	endif
 endif
 
 MACOS = 0
@@ -88,7 +82,16 @@ else
 	PTHREAD_LIB = -lpthread
 endif
 
-LIBS = $(PTHREAD_LIB)
+ifeq (1,$(NO_SPINLOCK))
+	EXTRA_FLAGS += -DNO_SPIN_LOCK
+endif
+
+ifeq (1,$(WITH_TBB))
+	LIBS = $(PTHREAD_LIB) -ltbb -ltbbmalloc_proxy
+	EXTRA_FLAGS += -DWITH_TBB
+else
+	LIBS = $(PTHREAD_LIB)
+endif
 SEARCH_LIBS = 
 BUILD_LIBS = 
 INSPECT_LIBS =
@@ -101,7 +104,11 @@ endif
 SHARED_CPPS = ccnt_lut.cpp ref_read.cpp alphabet.cpp shmem.cpp \
               edit.cpp bt2_idx.cpp bt2_io.cpp bt2_util.cpp \
               reference.cpp ds.cpp multikey_qsort.cpp limit.cpp \
-			  random_source.cpp tinythread.cpp
+			  random_source.cpp
+ifneq (1,$(WITH_TBB))
+	SHARED_CPPS += tinythread.cpp
+endif
+
 SEARCH_CPPS = qual.cpp pat.cpp sam.cpp \
               read_qseq.cpp aligner_seed_policy.cpp \
               aligner_seed.cpp \
@@ -434,6 +441,13 @@ doc/manual.html: MANUAL.markdown
 
 MANUAL: MANUAL.markdown
 	perl doc/strip_markdown.pl < $^ > $@
+
+.PHONY: install
+install: all
+	mkdir -p $(DESTDIR)$(bindir)
+	for file in $(BOWTIE2_BIN_LIST) bowtie2-inspect bowtie2-build bowtie2 ; do \
+		cp -f $$file $(DESTDIR)$(bindir) ; \
+	done
 
 .PHONY: clean
 clean:
