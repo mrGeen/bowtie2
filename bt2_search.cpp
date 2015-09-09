@@ -26,6 +26,7 @@
 #include <getopt.h>
 #include <math.h>
 #include <utility>
+#include <sched.h>
 #include <limits>
 #include "alphabet.h"
 #include "assert_helpers.h"
@@ -2950,6 +2951,8 @@ static void multiseedSearchWorker(void *vp) {
 	int mergei = 0;
 	int mergeival = 16;
 	while(true) {
+		//CWILKS added to create sync-like behavior
+                sched_yield();
 		bool success = false, done = false, paired = false;
 		ps->nextReadPair(success, done, paired, outType != OUTPUT_SAM);
 		if(!success && done) {
@@ -3009,6 +3012,7 @@ static void multiseedSearchWorker(void *vp) {
 				current_node = node;
 			}
 #endif
+                	sched_yield();
 			// Try to align this read
 			while(retry) {
 				retry = false;
@@ -3872,6 +3876,7 @@ static void multiseedSearchWorker(void *vp) {
 		else if(rdid >= qUpto) {
 			break;
 		}
+                sched_yield();
 		if(metricsPerRead) {
 			MERGE_METRICS(metricsPt, nthreads > 1);
 			nametmp = ps->bufa().name;
@@ -3879,10 +3884,12 @@ static void multiseedSearchWorker(void *vp) {
 				metricsOfb, metricsStderr, true, true, &nametmp);
 			metricsPt.reset();
 		}
+                sched_yield();
 	} // while(true)
 	
 	// One last metrics merge
 	MERGE_METRICS(metrics, nthreads > 1);
+        sched_yield();
 	
 	if(dpLog    != NULL) dpLog->close();
 	if(dpLogOpp != NULL) dpLogOpp->close();
