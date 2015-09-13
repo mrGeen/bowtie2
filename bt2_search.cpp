@@ -3015,6 +3015,7 @@ static void multiseedSearchWorker(void *vp) {
                 	sched_yield();
 			// Try to align this read
 			while(retry) {
+                		sched_yield();
 				retry = false;
 				assert_eq(ps->bufa().color, false);
 				ca.nextRead(); // clear the cache
@@ -3138,6 +3139,7 @@ static void multiseedSearchWorker(void *vp) {
 				// Calculate interval length for both mates
 				int interval[2] = { 0, 0 };
 				for(size_t mate = 0; mate < (pair ? 2:1); mate++) {
+                			sched_yield();
 					interval[mate] = msIval.f<int>((double)rdlens[mate]);
 					if(filt[0] && filt[1]) {
 						// Boost interval length by 20% for paired-end reads
@@ -3159,6 +3161,7 @@ static void multiseedSearchWorker(void *vp) {
 					mxIter[0]   = mxIter[1]   = std::numeric_limits<size_t>::max();
 				} else if(khits > 1) {
 					for(size_t mate = 0; mate < 2; mate++) {
+                				sched_yield();
 						streak[mate]   += (khits-1) * maxStreakIncr;
 						mtStreak[mate] += (khits-1) * maxStreakIncr;
 						mxDp[mate]     += (khits-1) * maxItersIncr;
@@ -3182,6 +3185,7 @@ static void multiseedSearchWorker(void *vp) {
 				assert_gt(nrounds[0], 0);
 				// Increment counters according to what got filtered
 				for(size_t mate = 0; mate < (pair ? 2:1); mate++) {
+                			sched_yield();
 					if(!filt[mate]) {
 						// Mate was rejected by N filter
 						olm.freads++;               // reads filtered out
@@ -3202,6 +3206,7 @@ static void multiseedSearchWorker(void *vp) {
 					// Find end-to-end exact alignments for each read
 					if(doExactUpFront) {
 						for(size_t matei = 0; matei < (pair ? 2:1); matei++) {
+                					sched_yield();
 							size_t mate = matemap[matei];
 							if(!filt[mate] || done[mate] || msinkwrap.state().doneWithMate(mate == 0)) {
 								continue;
@@ -3236,6 +3241,7 @@ static void multiseedSearchWorker(void *vp) {
 							matemap[0] = 1; matemap[1] = 0;
 						}
 						for(size_t matei = 0; matei < (seedSumm ? 0:2); matei++) {
+                					sched_yield();
 							size_t mate = matemap[matei];
 							if(nelt[mate] == 0 || nelt[mate] > eePeEeltLimit) {
 								shs[mate].clearExactE2eHits();
@@ -3381,6 +3387,7 @@ static void multiseedSearchWorker(void *vp) {
 					// 1-mismatch
 					if(do1mmUpFront && !seedSumm) {
 						for(size_t matei = 0; matei < (pair ? 2:1); matei++) {
+                					sched_yield();
 							size_t mate = matemap[matei];
 							if(!filt[mate] || done[mate] || nelt[mate] > eePeEeltLimit) {
 								// Done with this mate
@@ -3423,6 +3430,7 @@ static void multiseedSearchWorker(void *vp) {
 							matemap[0] = 1; matemap[1] = 0;
 						}
 						for(size_t matei = 0; matei < (seedSumm ? 0:2); matei++) {
+                					sched_yield();
 							size_t mate = matemap[matei];
 							if(nelt[mate] == 0 || nelt[mate] > eePeEeltLimit) {
 								continue;
@@ -3566,6 +3574,7 @@ static void multiseedSearchWorker(void *vp) {
 					size_t seedsTried = 0;
 					size_t nUniqueSeeds = 0, nRepeatSeeds = 0, seedHitTot = 0;
 					for(size_t roundi = 0; roundi < nSeedRounds; roundi++) {
+                				sched_yield();
 						ca.nextRead(); // Clear cache in preparation for new search
 						shs[0].clearSeeds();
 						shs[1].clearSeeds();
@@ -3578,6 +3587,7 @@ static void multiseedSearchWorker(void *vp) {
 						//	if(seedlens[1] > 8) seedlens[1]--;
 						//}
 						for(size_t matei = 0; matei < (pair ? 2:1); matei++) {
+                					sched_yield();
 							size_t mate = matemap[matei];
 							if(done[mate] || msinkwrap.state().doneWithMate(mate == 0)) {
 								// Done with this mate
@@ -3654,6 +3664,7 @@ static void multiseedSearchWorker(void *vp) {
 						// shs contain what we need to know to update our seed
 						// summaries for this seeding
 						for(size_t mate = 0; mate < 2; mate++) {
+                					sched_yield();
 							if(!shs[mate].empty()) {
 								nUniqueSeeds += shs[mate].numUniqueSeeds();
 								nRepeatSeeds += shs[mate].numRepeatSeeds();
@@ -3662,6 +3673,7 @@ static void multiseedSearchWorker(void *vp) {
 						}
 						double uniqFactor[2] = { 0.0f, 0.0f };
 						for(size_t i = 0; i < 2; i++) {
+                					sched_yield();
 							if(!shs[i].empty()) {
 								swmSeed.sdsucc++;
 								uniqFactor[i] = shs[i].uniquenessFactor();
@@ -3675,6 +3687,7 @@ static void multiseedSearchWorker(void *vp) {
 							matemap[0] = 1; matemap[1] = 0;
 						}
 						for(size_t matei = 0; matei < (pair ? 2:1); matei++) {
+                					sched_yield();
 							size_t mate = matemap[matei];
 							if(done[mate] || msinkwrap.state().doneWithMate(mate == 0)) {
 								// Done with this mate
@@ -3816,6 +3829,7 @@ static void multiseedSearchWorker(void *vp) {
 						// mates.  We continue on a mate only if its average
 						// interval length is high (> 1000)
 						for(size_t mate = 0; mate < 2; mate++) {
+                					sched_yield();
 							if(!done[mate] && shs[mate].averageHitsPerSeed() < seedBoostThresh) {
 								done[mate] = true;
 							}
@@ -3828,6 +3842,7 @@ static void multiseedSearchWorker(void *vp) {
 					}
 					size_t totnucs = 0;
 					for(size_t mate = 0; mate < (pair ? 2:1); mate++) {
+                				sched_yield();
 						if(filt[mate]) {
 							size_t len = rdlens[mate];
 							if(!nofw[mate] && !norc[mate]) {
@@ -3838,6 +3853,7 @@ static void multiseedSearchWorker(void *vp) {
 					}
 					prm.seedsPerNuc = (float)seedsTried / totnucs;
 					for(size_t i = 0; i < 2; i++) {
+                				sched_yield();
 						assert_leq(prm.nExIters, mxIter[i]);
 						assert_leq(prm.nExDps,   mxDp[i]);
 						assert_leq(prm.nMateDps, mxDp[i]);
